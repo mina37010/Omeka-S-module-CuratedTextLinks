@@ -1,0 +1,43 @@
+<?php echo $this->pageTitle('Bulk apply', 1, 'Curated Text Links'); ?>
+<?php if (count($targetOptions ?? []) <= 1): ?>
+<p class="messages warning">No registered targets are available yet.</p>
+<?php endif; ?>
+<?php if ($form): ?>
+<?php $form->prepare(); echo $this->form()->openTag($form); ?>
+<?php echo $this->formCollection($form); ?>
+<button type="submit" name="preview" value="1">Preview</button>
+<?php echo $this->form()->closeTag(); ?>
+<?php endif; ?>
+
+<?php if ($preview): ?>
+<h2>Preview</h2>
+<?php
+$data = is_array($bulkData['data'] ?? null) ? $bulkData['data'] : [];
+$targetText = (string) ($data['target_text'] ?? '');
+$terms = array_values(array_filter(array_map('trim', preg_split('/[\r\n,，、]+/u', $targetText) ?: []), fn($term) => $term !== ''));
+$short = (bool) array_filter($terms, fn($term) => mb_strlen($term, 'UTF-8') <= 2);
+$ambiguous = (bool) array_filter($terms, fn($term) => in_array($term, ['ケネディ', '吉田', '岸'], true));
+?>
+<?php if ($short || $ambiguous): ?>
+<p class="messages warning">This target text is short or ambiguous. Review carefully before executing.</p>
+<?php endif; ?>
+<form method="post">
+    <input type="hidden" name="bulk_data" value="<?php echo $this->escapeHtmlAttr(json_encode($bulkData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>">
+    <button type="submit" name="apply_bulk" value="1">Apply allowed candidates as a job</button>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+    <thead><tr><th>Allowed</th><th>Item</th><th>Search term</th><th>Hit</th><th>Context</th><th>Existing link</th></tr></thead>
+    <tbody>
+    <?php foreach ($preview as $index => $hit): ?>
+        <tr>
+            <td><input type="checkbox" name="approved_hits[]" value="<?php echo $this->escapeHtmlAttr($index); ?>" checked></td>
+            <td><?php echo $this->escapeHtml($hit['item_title'] ?: '#' . $hit['item_id']); ?></td>
+            <td><?php echo $this->escapeHtml($hit['search_text'] ?? $hit['exact_text']); ?></td>
+            <td><?php echo $this->escapeHtml($hit['exact_text']); ?></td>
+            <td><?php echo $this->escapeHtml($hit['prefix_text']); ?><mark><?php echo $this->escapeHtml($hit['exact_text']); ?></mark><?php echo $this->escapeHtml($hit['suffix_text']); ?></td>
+            <td><?php echo $hit['has_existing'] ? 'Yes' : 'No'; ?></td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+    </table>
+</form>
+<?php endif; ?>

@@ -1,0 +1,12 @@
+<?php echo $this->pageTitle('Batch #' . ($batch['id'] ?? ''), 1, 'Curated Text Links'); ?>
+<?php if (!$batch): ?>
+<p>Batch not found.</p>
+<?php else: ?>
+<dl>
+    <?php foreach ($batch as $key => $value): ?>
+    <dt><?php echo $this->escapeHtml($key); ?></dt>
+    <dd><pre><?php echo $this->escapeHtml(is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE)); ?></pre></dd>
+    <?php endforeach; ?>
+</dl>
+<?php endif; ?>
+

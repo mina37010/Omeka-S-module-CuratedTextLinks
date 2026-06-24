@@ -1,0 +1,20 @@
+<?php echo $this->pageTitle('Batches', 1, 'Curated Text Links'); ?>
+<table>
+    <thead><tr><th>ID</th><th>Label</th><th>Text</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+    <tbody>
+    <?php foreach ($batches as $batch): ?>
+    <tr>
+        <td><?php echo (int) $batch['id']; ?></td>
+        <td><?php echo $this->escapeHtml($batch['label']); ?></td>
+        <td><?php echo $this->escapeHtml($batch['target_text']); ?></td>
+        <td><?php echo $this->escapeHtml($batch['status']); ?></td>
+        <td><?php echo $this->escapeHtml($batch['created_at']); ?></td>
+        <td>
+            <a href="<?php echo $this->url('admin/curated-text-links/batch', ['action' => 'show', 'id' => $batch['id']]); ?>">Show</a>
+            <a href="<?php echo $this->url('admin/curated-text-links/batch', ['action' => 'rollback', 'id' => $batch['id']]); ?>">Rollback</a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+

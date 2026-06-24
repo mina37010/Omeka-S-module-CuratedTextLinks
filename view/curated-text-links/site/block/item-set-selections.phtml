@@ -1,0 +1,19 @@
+<?php if ($heading): ?>
+<h2><?php echo $this->escapeHtml($heading); ?></h2>
+<?php endif; ?>
+<div class="curated-text-item-set-actions">
+    <button type="button" onclick="window.location.reload()"><?php echo $this->escapeHtml($reloadLabel ?? 'Reload'); ?></button>
+    <a class="button" href="<?php echo $this->escapeHtmlAttr($moreUrl); ?>">もっと見る</a>
+</div>
+<div class="curated-text-item-set-selections">
+<?php foreach ($collections as $collection): ?>
+    <?php $url = $this->url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => 'item-set', 'action' => 'show', 'id' => $collection['id']]); ?>
+    <article class="curated-text-item-set-card"<?php if (!empty($collection['thumbnail'])): ?> style="background-image: url('<?php echo $this->escapeHtmlAttr($collection['thumbnail']); ?>')"<?php endif; ?>>
+        <a class="curated-text-item-set-card-link" href="<?php echo $url; ?>" aria-label="<?php echo $this->escapeHtmlAttr($collection['title']); ?>"></a>
+        <div class="curated-text-item-set-card-body">
+            <h3><a href="<?php echo $url; ?>"><?php echo $this->escapeHtml($collection['title']); ?></a></h3>
+            <span><?php echo (int) $collection['item_count']; ?> items</span>
+        </div>
+    </article>
+<?php endforeach; ?>
+</div>

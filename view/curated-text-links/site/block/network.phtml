@@ -1,0 +1,25 @@
+<?php if ($heading): ?>
+<h2><?php echo $this->escapeHtml($heading); ?></h2>
+<?php endif; ?>
+<div class="curated-text-network" data-ctl-network-url="<?php echo $this->escapeHtmlAttr($networkUrl); ?>"<?php if (!empty($autoShow)): ?> data-ctl-network-auto="1"<?php endif; ?>>
+    <div>
+        <div class="curated-text-network-controls">
+            <button type="button" data-ctl-network-show<?php if (!empty($autoShow)): ?> hidden<?php endif; ?>>Show network</button>
+            <button type="button" data-ctl-network-zoom="in">+</button>
+            <button type="button" data-ctl-network-zoom="out">-</button>
+            <button type="button" data-ctl-network-zoom="reset">Reset</button>
+            <button type="button" data-ctl-network-toggle-item-labels>Hide item names</button>
+        </div>
+        <div class="curated-text-network-summary" data-ctl-network-summary>
+            Network data is loaded only when requested.
+        </div>
+        <div class="curated-text-network-canvas" data-ctl-network-canvas hidden></div>
+    </div>
+    <div class="curated-text-network-detail" data-ctl-network-detail>
+        <strong>Node</strong>
+        <div>Select a node to see related links.</div>
+    </div>
+    <noscript>
+        JavaScript is required to display the network.
+    </noscript>
+</div>

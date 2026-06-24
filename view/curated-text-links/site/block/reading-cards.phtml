@@ -1,0 +1,40 @@
+<?php if ($heading): ?>
+<h2><?php echo $this->escapeHtml($heading); ?></h2>
+<?php endif; ?>
+<div class="curated-text-reading-cards-actions">
+    <button type="button" onclick="window.location.reload()">Reload</button>
+</div>
+<div class="curated-text-reading-cards">
+<?php foreach ($cards as $card): ?>
+    <?php
+    $item = null;
+    $thumbnailUrl = null;
+    try {
+        $item = $this->api()->read('items', $card['item_id'])->getContent();
+        $thumbnailUrl = $item->thumbnailDisplayUrl('medium');
+    } catch (\Throwable $e) {
+        $item = null;
+    }
+    ?>
+    <?php
+    $itemUrl = $this->url('site/resource-id', ['site-slug' => $siteSlug, 'controller' => 'item', 'action' => 'show', 'id' => $card['item_id']]);
+    $cornerClass = ['top-left', 'top-right', 'bottom-left', 'bottom-right'][(int) $card['item_id'] % 4];
+    ?>
+    <article class="curated-text-reading-card curated-text-reading-card-<?php echo $this->escapeHtmlAttr($cornerClass); ?>" data-ctl-reading-card data-ctl-item-id="<?php echo (int) $card['item_id']; ?>"<?php if ($thumbnailUrl): ?> data-ctl-thumbnail="<?php echo $this->escapeHtmlAttr($thumbnailUrl); ?>" style="background-image: url('<?php echo $this->escapeHtmlAttr($thumbnailUrl); ?>')"<?php endif; ?>>
+        <a class="curated-text-reading-card-link" href="<?php echo $itemUrl; ?>" aria-label="<?php echo $this->escapeHtmlAttr($card['title']); ?>"></a>
+        <div class="curated-text-reading-card-body">
+        <h3><a href="<?php echo $itemUrl; ?>"><?php echo $this->escapeHtml($card['title']); ?></a></h3>
+        <?php if (!empty($card['links'])): ?>
+        <div class="curated-text-reading-card-texts">
+            <?php foreach (array_slice($card['links'], 0, 4) as $link): ?>
+            <span><?php echo $this->escapeHtml($link['label']); ?> <small><?php echo $this->escapeHtml($link['type']); ?></small></span>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!$thumbnailUrl): ?>
+        <div class="curated-text-reading-card-initial"><?php echo $this->escapeHtml(mb_substr($card['title'], 0, 1, 'UTF-8')); ?></div>
+        <?php endif; ?>
+        </div>
+    </article>
+<?php endforeach; ?>
+</div>

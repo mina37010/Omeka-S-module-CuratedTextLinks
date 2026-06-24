@@ -1,0 +1,66 @@
+<div id="curated-text-links-popover" class="curated-text-links-popover" hidden
+     data-save-url="<?php echo $this->escapeHtml($saveUrl); ?>"
+     data-search-url="<?php echo $this->escapeHtml($searchUrl); ?>"
+     data-candidates-url="<?php echo $this->escapeHtml($candidatesUrl); ?>"
+     data-authority-url="<?php echo $this->escapeHtml($authorityUrl); ?>"
+     data-item-id="<?php echo (int) $item->id(); ?>"
+     data-target-property="<?php echo $this->escapeHtml($defaultTargetProperty); ?>">
+    <form>
+        <div class="curated-text-links-selection" data-ctl-selected-text></div>
+        <div class="curated-text-links-selected-candidate" data-ctl-selected-candidate hidden></div>
+        <label>Search term <input name="search_query" type="text" data-ctl-search-query></label>
+        <label>Element label <input name="link_label" type="text" data-ctl-link-label></label>
+        <label>Element attribute
+            <select name="link_type" data-ctl-link-type>
+                <?php foreach (['person', 'event', 'work', 'place', 'organization', 'concept'] as $type): ?>
+                <option value="<?php echo $this->escapeHtml($type); ?>"><?php echo $this->escapeHtml($type); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <div class="curated-text-links-toolbar">
+            <button type="button" data-ctl-local-search>Local</button>
+            <button type="button" data-ctl-authority="wikidata">Wikidata</button>
+            <button type="button" data-ctl-authority="ndl">NDL</button>
+        </div>
+        <div class="curated-text-links-candidates" data-ctl-candidates>
+            <div class="curated-text-links-candidates-title">Candidates</div>
+            <div data-ctl-candidates-body class="curated-text-links-candidates-body">Select text to search related data.</div>
+        </div>
+        <input name="target_uri" type="hidden">
+        <input name="target_resource_id" type="hidden">
+        <details>
+            <summary>Manual target / metadata</summary>
+            <label>Type
+                <select name="target_type">
+                    <?php foreach (['person', 'event', 'work', 'place', 'organization', 'concept'] as $type): ?>
+                    <option value="<?php echo $this->escapeHtml($type); ?>"><?php echo $this->escapeHtml($type); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>Label <input name="target_label" type="text"></label>
+            <label>Save metadata to
+                <select name="target_property_term">
+                    <option value="schema:about" <?php echo $defaultTargetProperty === 'schema:about' ? 'selected' : ''; ?>>schema:about</option>
+                    <option value="dcterms:subject" <?php echo $defaultTargetProperty === 'dcterms:subject' ? 'selected' : ''; ?>>dcterms:subject</option>
+                </select>
+            </label>
+            <label>URI <input name="target_uri_visible" type="url" data-ctl-target-uri-visible></label>
+            <label>Target item ID <input name="target_resource_id_visible" type="number" data-ctl-target-resource-visible></label>
+        </details>
+        <details>
+            <summary>Create Event Item</summary>
+            <input name="event_title" placeholder="dcterms:title">
+            <input name="event_alt_label" placeholder="skos:altLabel">
+            <input name="event_start_date" placeholder="schema:startDate">
+            <input name="event_end_date" placeholder="schema:endDate">
+            <input name="event_location" placeholder="schema:location">
+            <textarea name="event_description" placeholder="dcterms:description"></textarea>
+            <input name="event_source" placeholder="dcterms:source">
+            <input name="event_same_as" placeholder="owl:sameAs">
+        </details>
+        <div class="curated-text-links-actions">
+            <button type="submit">Save</button>
+            <button type="button" data-ctl-cancel>Cancel</button>
+        </div>
+    </form>
+</div>

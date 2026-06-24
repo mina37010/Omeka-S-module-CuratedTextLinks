@@ -1,0 +1,88 @@
+<?php $this->htmlElement('body')->appendAttribute('class', 'curated-text-links annotations browse'); ?>
+<?php $this->headLink()->appendStylesheet($this->assetUrl('css/curated-text-links.css', 'CuratedTextLinks')); ?>
+<?php echo $this->pageTitle('Curated Text Links'); ?>
+<div id="page-actions">
+    <a class="button" href="<?php echo $this->url('admin/curated-text-links/bulk'); ?>">Bulk apply</a>
+    <a class="button" href="<?php echo $this->url('admin/curated-text-links/settings'); ?>">Settings</a>
+</div>
+<?php echo $this->pagination(null, $totalCount ?? 0, $currentPage ?? 1, $perPage ?? 25); ?>
+<form method="post" action="<?php echo $this->url('admin/curated-text-links/update'); ?>">
+<div class="field">
+    <select name="batch_action">
+        <option value="approve">Approve selected</option>
+        <option value="reject">Reject selected</option>
+        <option value="delete">Delete selected</option>
+    </select>
+    <button type="submit">Apply</button>
+    <button type="submit" name="batch_action" value="approve_all">All approve</button>
+</div>
+<table class="tablesaw" data-tablesaw-mode="stack">
+    <thead><tr><th class="curated-text-links-select-column">Select</th><th>Items</th><th>Element</th><th>Text</th><th>Target</th><th>Status</th><th>Created by</th><th>Created</th><th>Actions</th></tr></thead>
+    <tbody>
+    <?php foreach ($annotations as $annotation): ?>
+        <?php
+        $ids = implode(',', array_map('intval', $annotation['ids'] ?? [$annotation['id']]));
+        $routeParams = ['id' => (int) ($annotation['ids'][0] ?? $annotation['id'])];
+        $query = ['query' => ['ids' => $ids]];
+        $targets = $annotation['targets'] ?? [[
+            'target_type' => (string) ($annotation['target_type'] ?: 'concept'),
+            'target_label' => (string) ($annotation['target_label'] ?: $annotation['target_uri'] ?: $annotation['target_resource_id']),
+            'target_uri' => $annotation['target_uri'] ?? null,
+            'target_resource_id' => $annotation['target_resource_id'] ?? null,
+        ]];
+        ?>
+        <tr>
+            <td class="curated-text-links-select-column"><input type="checkbox" name="selected_ids[]" value="<?php echo $this->escapeHtmlAttr($ids); ?>"></td>
+            <td>
+                <?php foreach (($annotation['items'] ?? []) as $item): ?>
+                    <div>
+                        <?php echo $this->escapeHtml($item['item_title']); ?>
+                        <small>#<?php echo (int) $item['item_id']; ?></small>
+                    </div>
+                <?php endforeach; ?>
+            </td>
+            <td>
+                <?php echo $this->escapeHtml($annotation['link_label'] ?: $annotation['exact_text']); ?>
+                <small><?php echo $this->escapeHtml($annotation['link_type'] ?: $annotation['target_type']); ?></small>
+            </td>
+            <td>
+                <?php echo $this->escapeHtml($annotation['exact_text']); ?>
+                <?php foreach (($annotation['items'] ?? []) as $item): ?>
+                    <?php foreach (($item['spans'] ?? []) as $span): ?>
+                        <small>
+                            #<?php echo (int) $item['item_id']; ?>
+                            / <?php echo $this->escapeHtml($span['property_label']); ?>
+                            / <?php echo (int) $span['start_offset']; ?>-<?php echo (int) $span['end_offset']; ?>
+                        </small>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+            </td>
+            <td>
+                <?php foreach ($targets as $target): ?>
+                    <?php
+                    $targetMeta = array_filter([
+                        (string) ($target['target_type'] ?: 'concept'),
+                        !empty($target['target_uri']) ? 'URI' : null,
+                        !empty($target['target_resource_id']) ? ('Item #' . (int) $target['target_resource_id']) : null,
+                    ]);
+                    ?>
+                    <div>
+                        <?php echo $this->escapeHtml($target['target_label']); ?>
+                        <small><?php echo $this->escapeHtml(implode(' / ', $targetMeta)); ?></small>
+                    </div>
+                <?php endforeach; ?>
+            </td>
+            <td><?php echo $this->escapeHtml($annotation['status']); ?></td>
+            <td><?php echo $this->escapeHtml($annotation['created_by_name'] ?: $annotation['created_by']); ?></td>
+            <td><?php echo $this->escapeHtml($annotation['created_at']); ?></td>
+            <td>
+                <a href="<?php echo $this->url('admin/curated-text-links/id', ['action' => 'approve'] + $routeParams, $query); ?>">Approve</a>
+                <a href="<?php echo $this->url('admin/curated-text-links/id', ['action' => 'reject'] + $routeParams, $query); ?>">Reject</a>
+                <a href="<?php echo $this->url('admin/curated-text-links/id', ['action' => 'delete'] + $routeParams, $query); ?>">Delete</a>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+</form>
+<?php echo $this->pagination(null, $totalCount ?? 0, $currentPage ?? 1, $perPage ?? 25); ?>
