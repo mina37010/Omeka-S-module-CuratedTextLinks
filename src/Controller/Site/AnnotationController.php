@@ -4,7 +4,6 @@ namespace CuratedTextLinks\Controller\Site;
 use CuratedTextLinks\Service\AnnotationService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\JsonModel;
-use Laminas\View\Model\ViewModel;
 
 class AnnotationController extends AbstractActionController
 {
@@ -190,22 +189,6 @@ class AnnotationController extends AbstractActionController
         return new JsonModel($itemId > 0
             ? $service->itemNetworkData($itemId, $options)
             : $service->networkData($options));
-    }
-
-    public function collectionsAction(): ViewModel
-    {
-        $services = $this->getEvent()->getApplication()->getServiceManager();
-        $service = $services->get(AnnotationService::class);
-        $kind = (string) $this->params()->fromQuery('kind', 'title');
-        $description = $kind === 'publication' ? '掲載物' : 'タイトル';
-        $heading = $kind === 'publication' ? '掲載物別コレクション' : 'タイトル別セレクション';
-        $view = new ViewModel([
-            'heading' => $heading,
-            'collections' => $service->itemSetSelections($description, 0, false),
-            'siteSlug' => (string) $this->params()->fromRoute('site-slug', ''),
-        ]);
-        $view->setTemplate('curated-text-links/site/collections');
-        return $view;
     }
 
     private function identityId(): ?int

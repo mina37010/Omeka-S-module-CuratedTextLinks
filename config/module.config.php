@@ -9,10 +9,8 @@ use CuratedTextLinks\Controller\Site\AnnotationController as SiteAnnotationContr
 use CuratedTextLinks\Form\BulkApplyForm;
 use CuratedTextLinks\Form\SettingsForm;
 use CuratedTextLinks\Service\AnnotationService;
-use CuratedTextLinks\Site\BlockLayout\ItemSetSelections;
 use CuratedTextLinks\Site\BlockLayout\Network;
 use CuratedTextLinks\Site\BlockLayout\ReadingCards;
-use CuratedTextLinks\Site\BlockLayout\RepositoryCounts;
 use CuratedTextLinks\Site\ResourcePageBlockLayout\ItemNetwork;
 use CuratedTextLinks\View\Helper\CuratedTextLinkedDescription;
 use Laminas\ServiceManager\Factory\InvokableFactory;
@@ -48,15 +46,6 @@ return [
             },
             'curatedTextReadingCards' => function (ContainerInterface $services) {
                 return new ReadingCards($services->get(AnnotationService::class));
-            },
-            'curatedTextRepositoryCounts' => function (ContainerInterface $services) {
-                return new RepositoryCounts($services->get(AnnotationService::class));
-            },
-            'curatedTextTitleSelections' => function (ContainerInterface $services) {
-                return new ItemSetSelections($services->get(AnnotationService::class), 'タイトル別セレクション', 'タイトル', 'title');
-            },
-            'curatedTextPublicationCollections' => function (ContainerInterface $services) {
-                return new ItemSetSelections($services->get(AnnotationService::class), '掲載物別コレクション', '掲載物', 'publication');
             },
         ],
     ],

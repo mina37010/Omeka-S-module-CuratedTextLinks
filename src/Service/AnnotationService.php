@@ -532,58 +532,6 @@ class AnnotationService
         return array_slice($cards, 0, $limit);
     }
 
-    public function itemSetSelections(string $description, int $limit = 4, bool $random = true): array
-    {
-        $description = trim($description);
-        if ($description === '') {
-            return [];
-        }
-        $propertyId = $this->propertyId('dcterms:description');
-        if (!$propertyId) {
-            return [];
-        }
-        $limit = max(0, min(200, $limit));
-        $order = $random ? 'RAND()' : 'r.title';
-        $limitSql = $limit > 0 ? " LIMIT $limit" : '';
-        $rows = $this->connection->fetchAllAssociative(
-            "SELECT r.id, r.title, COUNT(DISTINCT iis.item_id) AS item_count, MIN(iis.item_id) AS first_item_id
-             FROM resource r
-             INNER JOIN value v ON v.resource_id = r.id AND v.property_id = ? AND v.type = 'literal'
-             INNER JOIN item_item_set iis ON iis.item_set_id = r.id
-             WHERE r.resource_type = ? AND TRIM(v.value) = ?
-             GROUP BY r.id, r.title
-             HAVING COUNT(DISTINCT iis.item_id) >= 2
-             ORDER BY $order" . $limitSql,
-            [$propertyId, 'Omeka\Entity\ItemSet', $description]
-        );
-        return array_map(function (array $row): array {
-            return [
-                'id' => (int) $row['id'],
-                'title' => (string) ($row['title'] ?: ('Item set #' . $row['id'])),
-                'item_count' => (int) $row['item_count'],
-                'thumbnail' => !empty($row['first_item_id']) ? $this->itemThumbnailUrl((int) $row['first_item_id']) : null,
-            ];
-        }, $rows);
-    }
-
-    public function repositoryCounts(): array
-    {
-        return [
-            'collections' => (int) $this->connection->fetchOne(
-                'SELECT COUNT(*) FROM resource WHERE resource_type = ?',
-                ['Omeka\Entity\ItemSet']
-            ),
-            'items' => (int) $this->connection->fetchOne(
-                'SELECT COUNT(*) FROM resource WHERE resource_type = ?',
-                ['Omeka\Entity\Item']
-            ),
-            'images' => (int) $this->connection->fetchOne(
-                'SELECT COUNT(*) FROM media WHERE media_type LIKE ?',
-                ['image/%']
-            ),
-        ];
-    }
-
     public function targetKey(array $row): string
     {
         $base = (string) ($row['target_uri'] ?: ($row['target_resource_id'] ? ('item:' . $row['target_resource_id']) : ($row['target_type'] . ':' . $row['target_label'])));
@@ -1117,16 +1065,6 @@ class AnnotationService
                 'action' => 'show',
                 'id' => $itemId,
             ], [], true);
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }
-
-    private function itemThumbnailUrl(int $itemId): ?string
-    {
-        try {
-            $item = $this->services->get('Omeka\ApiManager')->read('items', $itemId)->getContent();
-            return $item && method_exists($item, 'thumbnailDisplayUrl') ? $item->thumbnailDisplayUrl('square') : null;
         } catch (\Throwable $e) {
             return null;
         }
