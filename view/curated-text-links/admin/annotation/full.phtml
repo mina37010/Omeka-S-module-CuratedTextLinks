@@ -1,0 +1,101 @@
+<?php
+$annotation = $annotation ?? null;
+$targets = $annotation['targets'] ?? [];
+$items = $annotation['items'] ?? [];
+?>
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Curated Text Link - 全体表示</title>
+    <style>
+        body {
+            margin: 24px;
+            color: #222;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.55;
+        }
+        h1 {
+            margin: 0 0 16px;
+            font-size: 22px;
+        }
+        section {
+            margin: 0 0 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #ddd;
+        }
+        h2 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+        .meta {
+            color: #666;
+            font-size: 13px;
+        }
+        .entry {
+            margin: 0 0 10px;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        .spans {
+            margin-top: 6px;
+            color: #555;
+            font-size: 13px;
+        }
+        .spans div {
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<?php if (!$annotation): ?>
+    <h1>Annotation not found</h1>
+<?php else: ?>
+    <h1><?php echo $this->escapeHtml($annotation['link_label'] ?: $annotation['exact_text']); ?></h1>
+    <section>
+        <h2>Element</h2>
+        <div><?php echo $this->escapeHtml($annotation['link_label'] ?: $annotation['exact_text']); ?></div>
+        <div class="meta"><?php echo $this->escapeHtml($annotation['link_type'] ?: $annotation['target_type']); ?> / <?php echo $this->escapeHtml($annotation['status']); ?></div>
+    </section>
+    <section>
+        <h2>Items</h2>
+        <?php foreach ($items as $item): ?>
+            <div class="entry">
+                <?php echo $this->escapeHtml($item['item_title']); ?>
+                <span class="meta">#<?php echo (int) $item['item_id']; ?></span>
+                <div class="spans">
+                    <?php foreach (($item['spans'] ?? []) as $span): ?>
+                        <div>
+                            <?php echo $this->escapeHtml($span['exact_text']); ?>
+                            <span class="meta">/ <?php echo $this->escapeHtml($span['property_label']); ?> / <?php echo (int) $span['start_offset']; ?>-<?php echo (int) $span['end_offset']; ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </section>
+    <section>
+        <h2>Targets</h2>
+        <?php foreach ($targets as $target): ?>
+            <div class="entry">
+                <?php echo $this->escapeHtml($target['target_label']); ?>
+                <span class="meta">
+                    <?php echo $this->escapeHtml($target['target_type']); ?>
+                    <?php if (!empty($target['target_uri'])): ?> / <?php echo $this->escapeHtml($target['target_uri']); ?><?php endif; ?>
+                    <?php if (!empty($target['target_resource_id'])): ?> / Item #<?php echo (int) $target['target_resource_id']; ?><?php endif; ?>
+                </span>
+            </div>
+        <?php endforeach; ?>
+    </section>
+    <section>
+        <h2>IDs</h2>
+        <div class="entry"><?php echo $this->escapeHtml(implode(', ', array_map('intval', $ids ?? []))); ?></div>
+    </section>
+<?php endif; ?>
+</body>
+</html>

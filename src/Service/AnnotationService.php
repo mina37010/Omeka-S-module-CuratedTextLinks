@@ -272,8 +272,34 @@ class AnnotationService
 
     public function annotationApplicationGroups(array $query = []): array
     {
+        return $this->groupAnnotationApplicationRows($this->annotations($query));
+    }
+
+    public function annotationApplicationGroupByIds(array $ids): ?array
+    {
+        $ids = $this->cleanIds($ids);
+        if (!$ids) {
+            return null;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT a.*, r.title AS item_title, p.label AS property_label, u.name AS created_by_name
+             FROM curated_text_link_annotation a
+             LEFT JOIN resource r ON r.id = a.item_id
+             LEFT JOIN property p ON p.id = a.property_id
+             LEFT JOIN user u ON u.id = a.created_by
+             WHERE a.id IN (' . $placeholders . ')
+             ORDER BY a.created_at DESC',
+            $ids
+        );
+        $groups = $this->groupAnnotationApplicationRows($rows);
+        return $groups[0] ?? null;
+    }
+
+    private function groupAnnotationApplicationRows(array $rows): array
+    {
         $groups = [];
-        foreach ($this->annotations($query) as $row) {
+        foreach ($rows as $row) {
             $key = !empty($row['batch_id'])
                 ? ('batch:' . (int) $row['batch_id'] . ':' . $row['status'])
                 : implode(':', [
@@ -446,6 +472,7 @@ class AnnotationService
                     'group' => 'item',
                     'kind' => 'item',
                     'url' => $siteSlug !== '' ? $this->siteItemUrl($siteSlug, (int) $row['item_id']) : null,
+                    'thumbnail' => $this->itemThumbnailUrl((int) $row['item_id']),
                     'current' => !empty($row['is_current_item']),
                 ];
             } elseif (!empty($row['is_current_item'])) {
@@ -1068,6 +1095,19 @@ class AnnotationService
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    private function itemThumbnailUrl(int $itemId): ?string
+    {
+        try {
+            $item = $this->services->get('Omeka\ApiManager')->read('items', $itemId)->getContent();
+            if ($item && method_exists($item, 'thumbnailDisplayUrl')) {
+                return $item->thumbnailDisplayUrl('square') ?: $item->thumbnailDisplayUrl('medium');
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return null;
     }
 
     private function wikidataCandidates(string $endpoint, string $query): array

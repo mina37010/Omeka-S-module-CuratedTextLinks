@@ -109,7 +109,7 @@
       var canvas = block.querySelector('[data-ctl-network-canvas]');
       var detail = block.querySelector('[data-ctl-network-detail]');
       var controls = block.querySelectorAll('[data-ctl-network-zoom]');
-      var showButton = block.querySelector('[data-ctl-network-show]');
+      var toggleButton = block.querySelector('[data-ctl-network-toggle]');
       var itemLabelToggle = block.querySelector('[data-ctl-network-toggle-item-labels]');
       var summary = block.querySelector('[data-ctl-network-summary]');
       if (!canvas) return;
@@ -122,11 +122,30 @@
       }
       var networkLoaded = !networkUrl;
       var rendered = false;
+      var isOpen = false;
+      function syncNetworkOpenState() {
+        canvas.hidden = !isOpen;
+        if (detail) detail.hidden = !isOpen;
+        if (toggleButton) {
+          toggleButton.disabled = false;
+          toggleButton.textContent = isOpen ? 'ネットワークを閉じる' : 'ネットワークを開く';
+          toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+      }
+      function resetNetworkDetail() {
+        if (!detail) return;
+        detail.hidden = false;
+        detail.innerHTML = '<strong>ノード詳細</strong><div>ノードを選択すると詳細を表示します。</div>';
+      }
       function drawNetwork() {
-      if (rendered) return;
+      if (rendered) {
+        isOpen = true;
+        syncNetworkOpenState();
+        return;
+      }
       if (networkUrl && !networkLoaded) {
-        if (summary) summary.textContent = 'Loading network...';
-        if (showButton) showButton.disabled = true;
+        if (summary) summary.textContent = 'ネットワークを読み込み中...';
+        if (toggleButton) toggleButton.disabled = true;
         fetch(networkUrl, {
           headers: {'X-Requested-With': 'XMLHttpRequest'},
           credentials: 'same-origin'
@@ -136,11 +155,11 @@
         }).then(function (data) {
           graph = data || {};
           networkLoaded = true;
-          if (showButton) showButton.disabled = false;
+          if (toggleButton) toggleButton.disabled = false;
           drawNetwork();
         }).catch(function () {
-          if (showButton) showButton.disabled = false;
-          if (summary) summary.textContent = 'Network load failed.';
+          if (toggleButton) toggleButton.disabled = false;
+          if (summary) summary.textContent = 'ネットワークの読み込みに失敗しました。';
         });
         return;
       }
@@ -149,15 +168,19 @@
       var edges = graph.edges || [];
       if (!nodes.length) {
         canvas.hidden = false;
-        canvas.textContent = 'No curated links to display.';
-        if (summary) summary.textContent = '0 nodes / 0 links';
+        canvas.textContent = '表示できるリンクがありません。';
+        if (summary) summary.textContent = '0 ノード / 0 リンク';
+        isOpen = true;
+        syncNetworkOpenState();
         return;
       }
       if (summary) {
-        summary.textContent = nodes.length + ' nodes / ' + edges.length + ' links';
+        summary.textContent = nodes.length + ' ノード / ' + edges.length + ' リンク';
       }
+      isOpen = true;
       canvas.hidden = false;
-      if (showButton) showButton.hidden = true;
+      resetNetworkDetail();
+      syncNetworkOpenState();
       var nodeCount = nodes.length;
       var baseWidth = canvas.clientWidth || 960;
       var width = Math.max(900, Math.min(9000, Math.round(baseWidth + nodeCount * 18)));
@@ -404,7 +427,7 @@
         itemLabelToggle.addEventListener('click', function () {
           itemLabelsVisible = !itemLabelsVisible;
           block.classList.toggle('curated-text-network-hide-item-labels', !itemLabelsVisible);
-          itemLabelToggle.textContent = itemLabelsVisible ? 'Hide item names' : 'Show item names';
+          itemLabelToggle.textContent = itemLabelsVisible ? 'アイテム名を隠す' : 'アイテム名を表示';
         });
       }
       var dragging = false;
@@ -458,13 +481,21 @@
         pointerDownNodeId = null;
       });
       }
-      if (showButton) {
-        showButton.addEventListener('click', drawNetwork);
+      if (toggleButton) {
+        toggleButton.addEventListener('click', function () {
+          if (isOpen) {
+            isOpen = false;
+            syncNetworkOpenState();
+          } else {
+            drawNetwork();
+          }
+        });
       }
       if (block.dataset.ctlNetworkAuto === '1') {
         drawNetwork();
       } else {
-        if (!showButton) {
+        syncNetworkOpenState();
+        if (!toggleButton) {
           drawNetwork();
         }
       }
@@ -472,17 +503,32 @@
 
     function showNetworkDetail(detail, node, edges, nodes) {
       if (!detail) return;
+      detail.hidden = false;
       var byId = {};
       nodes.forEach(function (item) { byId[item.id] = item; });
       var related = edges.filter(function (edge) {
         return edge.source === node.id || edge.target === node.id;
       });
       detail.innerHTML = '';
+      var header = document.createElement('div');
+      header.className = 'curated-text-network-detail-header';
+      var heading = document.createElement('strong');
+      heading.textContent = 'ノード詳細';
+      var close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'curated-text-network-detail-close';
+      close.textContent = '閉じる';
+      close.addEventListener('click', function () {
+        detail.hidden = true;
+      });
+      header.appendChild(heading);
+      header.appendChild(close);
+      detail.appendChild(header);
       if (node.thumbnail) {
         var thumb = document.createElement('img');
         thumb.className = 'curated-text-network-detail-thumb';
         thumb.src = node.thumbnail;
-        thumb.alt = '';
+        thumb.alt = node.label;
         detail.appendChild(thumb);
       }
       var title = document.createElement('strong');
@@ -496,7 +542,7 @@
         var nodeLink = document.createElement('a');
         nodeLink.className = 'curated-text-network-detail-link';
         nodeLink.href = node.url;
-        nodeLink.textContent = node.kind === 'item' ? 'Open item page' : 'Open link';
+        nodeLink.textContent = node.kind === 'item' ? 'アイテムページを開く' : 'リンクを開く';
         detail.appendChild(nodeLink);
       }
       if (node.targets && node.targets.length) {
@@ -515,11 +561,57 @@
         link.className = 'curated-text-network-detail-link';
         if (edge.url) link.href = edge.url;
         link.textContent = (other ? other.label : edge.label) + ' / ' + edge.label;
+        if (other && other.kind === 'item' && other.thumbnail) {
+          var smallThumb = document.createElement('img');
+          smallThumb.className = 'curated-text-network-detail-inline-thumb';
+          smallThumb.src = other.thumbnail;
+          smallThumb.alt = '';
+          link.prepend(smallThumb);
+        }
         detail.appendChild(link);
       });
     }
 
     Array.prototype.forEach.call(document.querySelectorAll('.curated-text-network'), renderNetwork);
+
+    function enhanceAdminBrowseRows() {
+      var table = document.querySelector('.curated-text-links-browse-table');
+      if (!table) return;
+      Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (row) {
+        if (row.dataset.ctlRowOverflowReady === '1') return;
+        var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+        var contents = cells.map(function (cell) {
+          return cell.querySelector('.tablesaw-cell-content') || cell;
+        }).filter(function (content) {
+          return !content.classList.contains('curated-text-links-select-column');
+        });
+        var hasOverflow = contents.some(function (content) {
+          return content.scrollHeight > content.clientHeight + 2;
+        });
+        row.dataset.ctlRowOverflowReady = '1';
+        if (!hasOverflow) return;
+        row.classList.add('has-overflow');
+        var selectCell = row.querySelector('.curated-text-links-select-column');
+        if (!selectCell || selectCell.querySelector('.curated-text-links-row-toggle')) return;
+        var fullUrl = row.dataset.ctlFullUrl || '';
+        if (!fullUrl) return;
+        var link = document.createElement('a');
+        link.className = 'curated-text-links-row-toggle';
+        link.href = fullUrl;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = '全体表示';
+        selectCell.appendChild(link);
+      });
+    }
+
+    enhanceAdminBrowseRows();
+    window.setTimeout(function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.curated-text-links-browse-table tbody tr'), function (row) {
+        row.dataset.ctlRowOverflowReady = '';
+      });
+      enhanceAdminBrowseRows();
+    }, 250);
 
     function detectReadingCardCorner(card) {
       var src = card.dataset.ctlThumbnail;

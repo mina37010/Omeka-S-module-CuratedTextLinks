@@ -47,6 +47,22 @@ class AnnotationController extends AbstractActionController
         return $this->redirect()->toRoute('admin/curated-text-links');
     }
 
+    public function fullAction(): ViewModel
+    {
+        $service = $this->getEvent()->getApplication()->getServiceManager()->get(AnnotationService::class);
+        $ids = $this->annotationIds();
+        $annotation = $service->annotationApplicationGroupByIds($ids);
+        if (!$annotation) {
+            $this->getResponse()->setStatusCode(404);
+        }
+        $view = new ViewModel([
+            'annotation' => $annotation,
+            'ids' => $ids,
+        ]);
+        $view->setTerminal(true);
+        return $view;
+    }
+
     public function approveAction()
     {
         $service = $this->getEvent()->getApplication()->getServiceManager()->get(AnnotationService::class);
